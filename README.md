@@ -1,7 +1,7 @@
 # recessgroup10
 its just for recess 2018
   recess term ii 2018
-                              MEMBERS
+                              MEMBER DETAILS
                               
 NAME                  REG.NO.           STUDENT NO.         EMAIL
 Muwonge Emmanuel    16/U/7842/PS      216003360         muwongeemmanuel123@gmail.com
