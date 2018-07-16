@@ -59,64 +59,63 @@ ui <- pageWithSidebar(
                      textInput("sum", "Please Enter The Column To Summarize", "age"))
   ),
   mainPanel( style = "background:white",
-    conditionalPanel(condition = "input.Analysis == 'Tables'",
-                     
-                     tabsetPanel(
-                       
-                       tabPanel("Top Players",value = 1,fluidRow(dataTableOutput("tplayers"))),
-                       tabPanel("Top Clubs",value = 1,fluidRow(dataTableOutput("tclubs"))),
-                       tabPanel("Top Countries",value = 1,fluidRow(dataTableOutput("tcountries"))),
-                       tabPanel("Positions",value = 2,fluidRow(dataTableOutput("best"))),
-                       id = "tabAnalysis"
-                       
-                     )
-                     
-                     
-    ),
-    conditionalPanel(condition = "input.Analysis == 'Plots'",
-                     
-                     tabsetPanel(
-                       
-                       tabPanel("DISTRIBUTION",fluidRow(plotOutput("distribution"))),
-                       tabPanel("TOP CLUBS",fluidRow(plotOutput("tclub"))),
-                       tabPanel("TOP NATIONS",fluidRow(plotOutput("tnation"))),
-                       tabPanel("TOP LEAGUES",fluidRow(plotOutput("tleague"))),
-                       tabPanel("AGE VS OVERALL",fluidRow(plotOutput("agevso")))
-                       
-                       
-                     )
-                     
-                     
-    ),
-    
-    conditionalPanel(condition = "input.Analysis == 'Predictions'",
-                     
-                     tabsetPanel(
-                       
-                       tabPanel("Signings",fluidRow(plotOutput("signings"))),
-                       tabPanel("Odds",fluidRow(dataTableOutput("odds")))
-                       
-                     )
-                     
-                     
-    ),
-    
-    conditionalPanel(condition = "input.Analysis == 'Summary'",
-                     
-                     tabsetPanel(
-                       
-                       tabPanel("Columns",fluidRow(tableOutput("columns"))),
-                       tabPanel("PLAYERS PER CLUB",fluidRow(dataTableOutput("ppc"))),
-                       tabPanel("PLAYERS PER NATION",fluidRow(dataTableOutput("ppn"))),
-                       tabPanel("VIEW ENTIRE DATASET",fluidRow(dataTableOutput("dataset"))),
-                       tabPanel("Clubs",fluidRow(dataTableOutput("clubs"))),
-                       tabPanel("Country",fluidRow(dataTableOutput("country"))),
-                       tabPanel("Continent",fluidRow(dataTableOutput("continent")))
-                       
-                     )
-                     
-                     
-    )
+             conditionalPanel(condition = "input.Analysis == 'Tables'",
+                              
+                              tabsetPanel(
+                                
+                                tabPanel("Top Players",value = 1,fluidRow(dataTableOutput("tplayers"))),
+                                tabPanel("Top Clubs",value = 1,fluidRow(dataTableOutput("tclubs"))),
+                                tabPanel("Top Countries",value = 1,fluidRow(dataTableOutput("tcountries"))),
+                                tabPanel("Positions",value = 2,fluidRow(dataTableOutput("best"))),
+                                id = "tabAnalysis"
+                                
+                              )
+                              
+                              
+             ),
+             conditionalPanel(condition = "input.Analysis == 'Plots'",
+                              
+                              tabsetPanel(
+                                
+                                tabPanel("DISTRIBUTION",fluidRow(plotOutput("distribution"))),
+                                tabPanel("TOP CLUBS",fluidRow(plotOutput("tclub"))),
+                                tabPanel("TOP NATIONS",fluidRow(plotOutput("tnation"))),
+                                tabPanel("TOP LEAGUES",fluidRow(plotOutput("tleague"))),
+                                tabPanel("AGE VS OVERALL",fluidRow(plotOutput("agevso"))),
+                                tabPanel("AGE FREQUENCY",fluidRow(plotOutput("agef")))
+                                
+                                
+                              )
+                              
+                              
+             ),
+             
+             conditionalPanel(condition = "input.Analysis == 'Predictions'",
+                              
+                              tabsetPanel(
+                                
+                                tabPanel("Signings",fluidRow(plotOutput("signings"))),
+                                tabPanel("Odds",fluidRow(dataTableOutput("odds")))
+                                
+                              )
+                              
+                              
+             ),
+             
+             conditionalPanel(condition = "input.Analysis == 'Summary'",
+                              
+                              tabsetPanel(
+                                
+                                tabPanel("Columns",fluidRow(tableOutput("columns"))),
+                                tabPanel("PLAYERS PER CLUB",fluidRow(dataTableOutput("ppc"))),
+                                tabPanel("PLAYERS PER NATION",fluidRow(dataTableOutput("ppn"))),
+                                tabPanel("VIEW ENTIRE DATASET",fluidRow(dataTableOutput("dataset")))
+                                
+                                
+                              )
+                              
+                              
+             )
   )
 )
 
@@ -152,15 +151,7 @@ server <- function(input, output, session){
     Top <- input$Top
     
     if(Top == "overall"){
-      # 1. top 11 players according to their Potential fifa rankings. It can be seen that these players have a very high valuation and command high wages.
-      #h2("Top 11 players according to their Potential fifa rankings.")
-      #fifa18 %>%
-       # group_by(club) %>%
-        #summarise(MeanOverallRating = round(x = mean(overall), digits = 2)) %>%
-        #arrange(desc(MeanOverallRating)) %>%
-        #top_n(10,wt = MeanOverallRating) %>%
-        #datatable(class = "nowrap hover row-border", escape = FALSE, 
-        #          options = list(dom = 't',scrollX = TRUE, autoWidth = TRUE))
+      
       fifa18 %>%
         group_by(club) %>%
         summarise(OverallScore = mean(overall)) %>%
@@ -170,15 +161,7 @@ server <- function(input, output, session){
     }
     else{
       
-      # 1. top 11 players according to their Potential fifa rankings. It can be seen that these players have a very high valuation and command high wages.
-      #h2("Top 11 players according to their Potential fifa rankings.")
-      #fifa18 %>%
-       # group_by(club) %>%
-       # summarise(MeanPotentialRating = round(x = mean(potential), digits = 2)) %>%
-       # arrange(desc(MeanPotentialRating)) %>%
-       # top_n(10,wt = MeanPotentialRating) %>%
-       # datatable(class = "nowrap hover row-border", escape = FALSE, 
-        #          options = list(dom = 't',scrollX = TRUE, autoWidth = TRUE))
+      
       fifa18 %>%
         group_by(club) %>%
         summarise(Potentialscore = mean(potential)) %>%
@@ -194,19 +177,8 @@ server <- function(input, output, session){
     Top <- input$Top
     
     if(Top == "overall"){
-      # 1. top 11 players according to their Potential fifa rankings. It can be seen that these players have a very high valuation and command high wages.
-      #h2("Top 11 players according to their Potential fifa rankings.")
       
-     # fifa18 %>%
-      # group_by(nationality) %>%
-      # summarise(MeanOverallRating = round(x = mean(overall), digits = 2), n = n()) %>%
-      # filter(n > 100) %>%
-      # arrange(desc(MeanOverallRating)) %>%
-      # top_n(10,wt = MeanOverallRating) %>%
-      # select(nationality,MeanOverallRating) %>%  
-      # datatable(class = "nowrap hover row-border", escape = FALSE, 
-      #           options = list(dom = 't',scrollX = TRUE, autoWidth = TRUE)) 
-        fifa18 %>%
+      fifa18 %>%
         group_by(nationality) %>%
         summarise(OverallScore = mean(overall)) %>%
         mutate(OverallScore = round(OverallScore, 1)) %>%
@@ -215,18 +187,7 @@ server <- function(input, output, session){
     }
     else{
       
-      # 1. top 11 players according to their Potential fifa rankings. It can be seen that these players have a very high valuation and command high wages.
-      #h2("Top 11 players according to their Potential fifa rankings.")
       
-      #fifa18 %>%
-      #  group_by(nationality) %>%
-       # summarise(MeanPotentialRating = round(x = mean(potential), digits = 2), n = n()) %>%
-        #filter(n > 100) %>%
-      #  arrange(desc(MeanPotentialRating)) %>%
-      #  top_n(10,wt = MeanPotentialRating) %>%
-      #  select(nationality,MeanPotentialRating) %>%  
-       # datatable(class = "nowrap hover row-border", escape = FALSE, 
-        #          options = list(dom = 't',scrollX = TRUE, autoWidth = TRUE)) 
       fifa18 %>%
         group_by(nationality) %>%
         summarise(PotentialScore = mean(potential)) %>%
@@ -265,14 +226,14 @@ server <- function(input, output, session){
   
   #--Plot top 10 Clubs--#
   output$tnation <- renderPlot({
-     
-     best_nation <- reactive( fifa18 %>%
-      group_by(nationality) %>%
-      summarise(OverallScore = mean(overall)) %>%
-      mutate(OverallScore = round(OverallScore, 1)) %>%
-      arrange(desc(OverallScore)) %>%
-      head(10)
-     )
+    
+    best_nation <- reactive( fifa18 %>%
+                               group_by(nationality) %>%
+                               summarise(OverallScore = mean(overall)) %>%
+                               mutate(OverallScore = round(OverallScore, 1)) %>%
+                               arrange(desc(OverallScore)) %>%
+                               head(10)
+    )
     
     ggplot(best_nation(),
            aes(x = reorder(nationality, -OverallScore),
@@ -290,14 +251,14 @@ server <- function(input, output, session){
   
   #--Plot top 10 clubs--#
   output$tclub <- renderPlot({
-   
-     best_club <- reactive(fifa18 %>%
-      group_by(club) %>%
-      summarise(OverallScore = mean(overall)) %>%
-      mutate(OverallScore = round(OverallScore, 1)) %>%
-      arrange(desc(OverallScore)) %>%
-      head(10)
-     )
+    
+    best_club <- reactive(fifa18 %>%
+                            group_by(club) %>%
+                            summarise(OverallScore = mean(overall)) %>%
+                            mutate(OverallScore = round(OverallScore, 1)) %>%
+                            arrange(desc(OverallScore)) %>%
+                            head(10)
+    )
     ggplot(best_club(),
            aes(x = reorder(club, -OverallScore),
                y = OverallScore,
@@ -314,11 +275,11 @@ server <- function(input, output, session){
   
   output$tleague <- renderPlot({
     best_league <- reactive(fifa18 %>%
-                            group_by(league) %>%
-                            summarise(OverallScore = mean(overall)) %>%
-                            mutate(OverallScore = round(OverallScore, 1)) %>%
-                            arrange(desc(OverallScore)) %>%
-                            head(10)
+                              group_by(league) %>%
+                              summarise(OverallScore = mean(overall)) %>%
+                              mutate(OverallScore = round(OverallScore, 1)) %>%
+                              arrange(desc(OverallScore)) %>%
+                              head(10)
     )
     ggplot(best_league(),
            aes(x = reorder(league, -OverallScore),
@@ -336,9 +297,9 @@ server <- function(input, output, session){
   
   output$agevso <- renderPlot({
     age_overall <- reactive (fifa18 %>%
-      select(age, overall) %>%
-      group_by(age, overall) %>%
-      count()
+                               select(age, overall) %>%
+                               group_by(age, overall) %>%
+                               count()
     )
     ggplot(age_overall(), aes(x = age, y = overall)) +
       geom_point(aes(size = n, color = n)) +
@@ -348,12 +309,29 @@ server <- function(input, output, session){
     
   })
   
+  output$agef <- renderPlot({
+    age <- reactive(table(fifa18$age)) #create a table for age placed in variable age. The function table() creates
+    #columns for the values and their frequencies
+    
+    
+    
+    #USE barplot() and par() for parameters
+    par(oma = c(1,4,1,1)) #Sets outside margin: bottom, left, top ,right
+    par(mar = c(4,5,2,1)) #Sets plot margins
+    #Add main title and label for x axis
+    barplot(age(), 
+            main = "Number of players per age in FIFA 18" , 
+            xlab = "Age",
+            ylab = "Frequency",
+            col  = "blue")
+  })
+  
   output$columns <- renderTable({
     summary(select(fifa18,input$sum))
   })
   
   output$ppc <- renderDataTable({
-      fifa18 %>%
+    fifa18 %>%
       filter(!is.na(club)) %>%
       group_by(club) %>%
       count()
