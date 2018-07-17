@@ -82,7 +82,12 @@ ui <- pageWithSidebar(
                                 tabPanel("TOP NATIONS",fluidRow(plotOutput("tnation"))),
                                 tabPanel("TOP LEAGUES",fluidRow(plotOutput("tleague"))),
                                 tabPanel("AGE VS OVERALL",fluidRow(plotOutput("agevso"))),
-                                tabPanel("AGE FREQUENCY",fluidRow(plotOutput("agef")))
+                                tabPanel("AGE FREQUENCY",fluidRow(plotOutput("agef"))),
+                                tabPanel("NUMBER OF PLAYERS",fluidRow(plotOutput("natdis"))),
+                                tabPanel("OVERALL VS AGE VS WAGE",fluidRow(plotOutput("wage"))),
+                                tabPanel("OVERALL VS AGE VS VALUE",fluidRow(plotOutput("value"))),
+                                tabPanel("TOP VALUABLE CLUBS",fluidRow(plotOutput("valuable")))
+                                
                                 
                                 
                               )
@@ -324,6 +329,41 @@ server <- function(input, output, session){
             xlab = "Age",
             ylab = "Frequency",
             col  = "blue")
+  })
+  
+  output$natdis <- renderPlot({
+    countries_count <- count(fifa18, nationality)
+    top_10_countries <- top_n(countries_count, 10, n)
+    top_10_country_names <- top_10_countries$nationality
+    
+    country <- filter(fifa18, nationality == top_10_country_names)
+    ggplot(country, aes(x = nationality)) + 
+      geom_bar(col = "green", aes(fill = ..count..)) + ggtitle("Distribution based on Nationality of Players (Top 10 Countries)")
+  })
+  
+  output$wage <- renderPlot({
+    g_age_overall <- ggplot(fifa18, aes(age, overall))
+    g_age_overall + 
+      geom_point(aes(color=eur_wage)) + geom_smooth(color="pink") + 
+      ggtitle("Distribution between Age and Overall of players based  on Wage bracket")
+    
+  })
+  
+  output$value <- renderPlot({
+    g_age_overall <- ggplot(fifa18, aes(age, overall))
+    g_age_overall + geom_point(aes(color=eur_value)) + geom_smooth(color="darkblue") + 
+      ggtitle("Distribution between Age and Overall of players based on Value bracket")
+  })
+  
+  output$valuable <- renderPlot({
+    group_clubs <- group_by(fifa18, club)
+    club_value <- summarise(group_clubs, total_val = sum(eur_value))
+    top_10_valuable_clubs <- top_n(club_value, 10, total_val)
+    
+    top_10_valuable_clubs$Club <-as.factor(top_10_valuable_clubs$club)
+    
+    ggplot(top_10_valuable_clubs, aes(x = club, y = total_val)) + geom_bar(stat = "identity", aes(fill=total_val)) + coord_flip() + ggtitle("Top 10 valuable clubs")
+    
   })
   
   output$columns <- renderTable({
