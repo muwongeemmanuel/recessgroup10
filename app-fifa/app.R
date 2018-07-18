@@ -7,7 +7,8 @@ library(dplyr) # used for data manipulation
 library(DT) # used for datatable function for displaying dataset
 library(ggthemes) #for using themes for plots
 library(shiny)
-library(sqldf)
+library(class)
+library(cluster)
 
 fifa <- read.csv("data/complete.csv", header=TRUE)
 fifa_1 <- tbl_df(fifa)
@@ -91,45 +92,158 @@ pois2$home <- rep(0,nrow(pois2)) # make new column
 
 pois_final <- rbind(pois1,pois2)
 
-shinyServer(function(input, output,session) {
-  
- 
-  db <- dbConnect(SQLite(), dbname="database.sqlite")
-  
-  
-  USER <- reactiveValues(Logged = FALSE)
-  
-  observeEvent(input$login, {
- 
-    c<-sqldf("SELECT * FROM user ", dbname = "database.sqlite")  
-    nrow(c)
-    rt<- 0;
-    for (row in 1:nrow(c)) {
-      username <- c[row, "username"]
-      passwordd  <- c[row, "password"]
-      t<- grepl(input$username, username)
-      f<- grepl(input$password, passwordd)
-      if(t == TRUE & f == TRUE) {
-        rt<- rt+1
-      }
-    }
-    if(rt>0){
-      USER$Logged <- TRUE
-      output$well = renderText("Welcome Mr/Ms.")
-      output$valid = renderText(input$username)
-    }else{
-      output$message = renderText("Invalid user name or password")
-      
-      show("message")
-      
-      
-      #delay(10000, hide("message", anim = TRUE, animType = "fade"))
-      
-    }
-    
-  
-  })
-  
+# Define UI for app  ----
+ui <- pageWithSidebar( 
+
+  headerPanel(h1("FIFA 18 DATASET ANALYSIS", align = 'center', style = "background:skyblue;color:white")),
+  sidebarPanel(style = "background:lightgreen", 
+    img(src = 'ronaldo.jpg', height=300 , width = 350),          
+    selectInput("Analysis", "Please Select Analysis Type",
+                choices = c("Tables", "Plots" , "Predictions" , "Summary")),
+    conditionalPanel(condition = "input.Analysis == 'Tables'",
+                     textInput("Rows", "Please Select the top N row", 10),
+                     
+                     conditionalPanel(condition="input.tabAnalysis==1",
+                                      selectInput("Top", "Please Select Arrangement Criteria",
+                                                  choices = c("overall", "potential" )) 
+                     )
+                     
+                     
+    ),
+    conditionalPanel(condition = "input.Analysis == 'Predictions'",
+                     
+                     
+                     conditionalPanel(condition="input.tabPredictions==3",
+                                      textInput("player", "Please Select the player you want your signing to be like", "G. Bale") 
+                     ),
+                     
+                     
+                     conditionalPanel(condition="input.tabPredictions==4",
+                                      textInput("Team_1", "Please Select The Home Team", "Chelsea"),
+                                      radioButtons("playersOut_H", "Select Numbers of missing players in Home Team",
+                                                   c(1, 2, 3, 4,5),selected = FALSE,
+                                                   inline = TRUE, width = NULL, choiceNames = NULL, choiceValues = NULL),
+                                      conditionalPanel(condition = "input.playersOut_H == 1",
+                                                       textInput("playerH_1", "Player 1")),
+                                      conditionalPanel(condition = "input.playersOut_H == 2",
+                                                       textInput("playerH_2", "player 1"),
+                                                       textInput("playerH_3", "Player 2")),
+                                      conditionalPanel(condition = "input.playersOut_H == 3",
+                                                       textInput("playerH_4", "player 1"),
+                                                       textInput("playerH_5", "Player 2"),
+                                                       textInput("playerH_6", "Player 3")),
+                                      conditionalPanel(condition = "input.playersOut_H == 4",
+                                                       textInput("playerH_7", "player 1"),
+                                                       textInput("playerH_8", "Player 2"),
+                                                       textInput("playerH_9", "player 3"),
+                                                       textInput("playerH_10", "Player 4")),
+                                      conditionalPanel(condition = "input.playersOut_H == 5",
+                                                       textInput("playerH_11", "player 1"),
+                                                       textInput("playerH_12", "Player 2"),
+                                                       textInput("playerH_13", "player 3"),
+                                                       textInput("playerH_14", "player 4"),
+                                                       textInput("playerH_15", "Player 5")),
+                                      
+                                      textInput("Team_2", "Please Select the Second Team", "Juventus") ,
+                                      
+                                      radioButtons("playersOut_A", "Select Numbers of missing players in Away Team",
+                                                   c(1, 2, 3, 4,5),selected = FALSE,
+                                                   inline = TRUE, width = NULL, choiceNames = NULL, choiceValues = NULL),
+                                      conditionalPanel(condition = "input.playersOut_A == 1",
+                                                       textInput("playerA_1", "Player 1")),
+                                      conditionalPanel(condition = "input.playersOut_A == 2",
+                                                       textInput("playerA_2", "player 1"),
+                                                       textInput("playerA_3", "Player 2")),
+                                      conditionalPanel(condition = "input.playersOut_A == 3",
+                                                       textInput("playerA_4", "player 1"),
+                                                       textInput("playerA_5", "Player 2"),
+                                                       textInput("playerA_6", "Player 3")),
+                                      conditionalPanel(condition = "input.playersOut_A == 4",
+                                                       textInput("playerA_7", "player 1"),
+                                                       textInput("playerA_8", "Player 2"),
+                                                       textInput("playerA_9", "player 3"),
+                                                       textInput("playerA_10", "Player 4")),
+                                      conditionalPanel(condition = "input.playersOut_A == 5",
+                                                       textInput("playerA_11", "player 1"),
+                                                       textInput("playerA_12", "Player 2"),
+                                                       textInput("playerA_13", "player 3"),
+                                                       textInput("playerA_14", "player 4"),
+                                                       textInput("playerA_15", "Player 5"))
+                     )
+    ),
+    conditionalPanel(condition = "input.Analysis == 'Summary'",
+                     textInput("sum", "Please Enter The Column To Summarize", "age"))
+  ),
+  mainPanel( style = "background:lightblue",
+             conditionalPanel(condition = "input.Analysis == 'Tables'",
+                              style = "background: ; padding:20px",
+                              
+                              tabsetPanel( 
+                                
+                                tabPanel("Top Players",value = 1,fluidRow(dataTableOutput("tplayers"))),
+                                tabPanel("Top Clubs",value = 1,fluidRow(dataTableOutput("tclubs"))),
+                                tabPanel("Top Countries",value = 1,fluidRow(dataTableOutput("tcountries"))),
+                                tabPanel("Positions",value = 2,fluidRow(dataTableOutput("best"))),
+                                id = "tabAnalysis"
+                                
+                              )
+                              
+                              
+             ),
+             conditionalPanel(condition = "input.Analysis == 'Plots'",
+                              
+                              tabsetPanel(
+                                
+                                tabPanel("DISTRIBUTION",fluidRow(plotOutput("distribution"))),
+                                tabPanel("TOP CLUBS",fluidRow(plotOutput("tclub"))),
+                                tabPanel("TOP NATIONS",fluidRow(plotOutput("tnation"))),
+                                tabPanel("TOP LEAGUES",fluidRow(plotOutput("tleague"))),
+                                tabPanel("AGE VS OVERALL",fluidRow(plotOutput("agevso"))),
+                                tabPanel("AGE FREQUENCY",fluidRow(plotOutput("agef"))),
+                                tabPanel("NUMBER OF PLAYERS",fluidRow(plotOutput("natdis"))),
+                                tabPanel("OVERALL VS AGE VS WAGE",fluidRow(plotOutput("wage"))),
+                                tabPanel("OVERALL VS AGE VS VALUE",fluidRow(plotOutput("value"))),
+                                tabPanel("TOP VALUABLE CLUBS",fluidRow(plotOutput("valuable")))
+                                
+                                
+                                
+                              )
+                              
+                              
+             ),
+             
+             conditionalPanel(condition = "input.Analysis == 'Predictions'",
+                              
+                              tabsetPanel(
+                                
+                                tabPanel("Signings",value = 3,fluidRow(dataTableOutput("signings"))),
+                                tabPanel("Odds",value = 4,fluidRow(dataTableOutput("odds"))),
+                                id = "tabPredictions"
+                                
+                              )
+                              
+                              
+             ),
+             
+             conditionalPanel(condition = "input.Analysis == 'Summary'",
+                              
+                              tabsetPanel(
+                                
+                                tabPanel("Columns",fluidRow(tableOutput("columns"))),
+                                tabPanel("PLAYERS PER CLUB",fluidRow(dataTableOutput("ppc"))),
+                                tabPanel("PLAYERS PER NATION",fluidRow(dataTableOutput("ppn"))),
+                                tabPanel("VIEW ENTIRE DATASET",fluidRow(dataTableOutput("dataset")))
+                                
+                                
+                              )
+                              
+                              
+             )
+  )
+)
+
+# Define server logic required to draw a histogram ----
+server <- function(input, output, session){
   
   output$tplayers <- renderDataTable({
     
@@ -527,195 +641,7 @@ shinyServer(function(input, output,session) {
       stop("Invalid icon. Use Shiny's 'icon()' function to generate a valid icon")
     }
   } #End debugging
-  
-  
-  
- 
-  output$side = renderUI(
-    if (!isTRUE(USER$Logged)) {
-      fluidRow(column(width=4, offset = 4,
-                      wellPanel(id = 'login',
-                                textInput('username', 'Username:'),
-                                passwordInput('password', 'Password:'),
-                                div(actionButton('login', 'Log in'), style='text-align: center;')
-                      ),
-                      textOutput("message")
-      ))
-    } else {
-      pageWithSidebar( 
-        
-        headerPanel(h1("FIFA 18 DATASET ANALYSIS", align = 'center', style = "background:skyblue;color:white",actionButton("logout","Logout"))),
-        sidebarPanel(style = "background:lightgreen", 
-                     img(src = 'ronaldo.jpg', height=300 , width = 345),          
-                     selectInput("Analysis", "Please Select Analysis Type",
-                                 choices = c("Tables", "Plots" , "Predictions" , "Summary")),
-                     conditionalPanel(condition = "input.Analysis == 'Tables'",
-                                      textInput("Rows", "Please Select the top N row", 10),
-                                      
-                                      conditionalPanel(condition="input.tabAnalysis==1",
-                                                       selectInput("Top", "Please Select Arrangement Criteria",
-                                                                   choices = c("overall", "potential" )) 
-                                      )
-                                      
-                                      
-                     ),
-                     conditionalPanel(condition = "input.Analysis == 'Predictions'",
-                                      
-                                      
-                                      conditionalPanel(condition="input.tabPredictions==3",
-                                                       textInput("player", "Please Select the player you want your signing to be like", "G. Bale") 
-                                      ),
-                                      
-                                      
-                                      conditionalPanel(condition="input.tabPredictions==4",
-                                                       textInput("Team_1", "Please Select The Home Team", "Chelsea"),
-                                                       radioButtons("playersOut_H", "Select Numbers of missing players in Home Team",
-                                                                    c(1, 2, 3, 4,5),selected = FALSE,
-                                                                    inline = TRUE, width = NULL, choiceNames = NULL, choiceValues = NULL),
-                                                       conditionalPanel(condition = "input.playersOut_H == 1",
-                                                                        textInput("playerH_1", "Player 1")),
-                                                       conditionalPanel(condition = "input.playersOut_H == 2",
-                                                                        textInput("playerH_2", "player 1"),
-                                                                        textInput("playerH_3", "Player 2")),
-                                                       conditionalPanel(condition = "input.playersOut_H == 3",
-                                                                        textInput("playerH_4", "player 1"),
-                                                                        textInput("playerH_5", "Player 2"),
-                                                                        textInput("playerH_6", "Player 3")),
-                                                       conditionalPanel(condition = "input.playersOut_H == 4",
-                                                                        textInput("playerH_7", "player 1"),
-                                                                        textInput("playerH_8", "Player 2"),
-                                                                        textInput("playerH_9", "player 3"),
-                                                                        textInput("playerH_10", "Player 4")),
-                                                       conditionalPanel(condition = "input.playersOut_H == 5",
-                                                                        textInput("playerH_11", "player 1"),
-                                                                        textInput("playerH_12", "Player 2"),
-                                                                        textInput("playerH_13", "player 3"),
-                                                                        textInput("playerH_14", "player 4"),
-                                                                        textInput("playerH_15", "Player 5")),
-                                                       
-                                                       textInput("Team_2", "Please Select the Second Team", "Juventus") ,
-                                                       
-                                                       radioButtons("playersOut_A", "Select Numbers of missing players in Away Team",
-                                                                    c(1, 2, 3, 4,5),selected = FALSE,
-                                                                    inline = TRUE, width = NULL, choiceNames = NULL, choiceValues = NULL),
-                                                       conditionalPanel(condition = "input.playersOut_A == 1",
-                                                                        textInput("playerA_1", "Player 1")),
-                                                       conditionalPanel(condition = "input.playersOut_A == 2",
-                                                                        textInput("playerA_2", "player 1"),
-                                                                        textInput("playerA_3", "Player 2")),
-                                                       conditionalPanel(condition = "input.playersOut_A == 3",
-                                                                        textInput("playerA_4", "player 1"),
-                                                                        textInput("playerA_5", "Player 2"),
-                                                                        textInput("playerA_6", "Player 3")),
-                                                       conditionalPanel(condition = "input.playersOut_A == 4",
-                                                                        textInput("playerA_7", "player 1"),
-                                                                        textInput("playerA_8", "Player 2"),
-                                                                        textInput("playerA_9", "player 3"),
-                                                                        textInput("playerA_10", "Player 4")),
-                                                       conditionalPanel(condition = "input.playersOut_A == 5",
-                                                                        textInput("playerA_11", "player 1"),
-                                                                        textInput("playerA_12", "Player 2"),
-                                                                        textInput("playerA_13", "player 3"),
-                                                                        textInput("playerA_14", "player 4"),
-                                                                        textInput("playerA_15", "Player 5"))
-                                      )
-                     ),
-                     conditionalPanel(condition = "input.Analysis == 'Summary'",
-                                      textInput("sum", "Please Enter The Column To Summarize", "age"))
-        ),
-        mainPanel( style = "background:lightblue",
-                   conditionalPanel(condition = "input.Analysis == 'Tables'",
-                                    style = "background: ; padding:20px",
-                                    
-                                    tabsetPanel( 
-                                      
-                                      tabPanel("Top Players",value = 1,fluidRow(dataTableOutput("tplayers"))),
-                                      tabPanel("Top Clubs",value = 1,fluidRow(dataTableOutput("tclubs"))),
-                                      tabPanel("Top Countries",value = 1,fluidRow(dataTableOutput("tcountries"))),
-                                      tabPanel("Positions",value = 2,fluidRow(dataTableOutput("best"))),
-                                      id = "tabAnalysis"
-                                      
-                                    )
-                                    
-                                    
-                   ),
-                   conditionalPanel(condition = "input.Analysis == 'Plots'",
-                                    
-                                    tabsetPanel(
-                                      
-                                      tabPanel("DISTRIBUTION",fluidRow(plotOutput("distribution"))),
-                                      tabPanel("TOP CLUBS",fluidRow(plotOutput("tclub"))),
-                                      tabPanel("TOP NATIONS",fluidRow(plotOutput("tnation"))),
-                                      tabPanel("TOP LEAGUES",fluidRow(plotOutput("tleague"))),
-                                      tabPanel("AGE VS OVERALL",fluidRow(plotOutput("agevso"))),
-                                      tabPanel("AGE FREQUENCY",fluidRow(plotOutput("agef"))),
-                                      tabPanel("NUMBER OF PLAYERS",fluidRow(plotOutput("natdis"))),
-                                      tabPanel("OVERALL VS AGE VS WAGE",fluidRow(plotOutput("wage"))),
-                                      tabPanel("OVERALL VS AGE VS VALUE",fluidRow(plotOutput("value"))),
-                                      tabPanel("TOP VALUABLE CLUBS",fluidRow(plotOutput("valuable")))
-                                      
-                                      
-                                      
-                                    )
-                                    
-                                    
-                   ),
-                   
-                   conditionalPanel(condition = "input.Analysis == 'Predictions'",
-                                    
-                                    tabsetPanel(
-                                      
-                                      tabPanel("Signings",value = 3,fluidRow(dataTableOutput("signings"))),
-                                      tabPanel("Odds",value = 4,fluidRow(dataTableOutput("odds"))),
-                                      id = "tabPredictions"
-                                      
-                                    )
-                                    
-                                    
-                   ),
-                   
-                   conditionalPanel(condition = "input.Analysis == 'Summary'",
-                                    
-                                    tabsetPanel(
-                                      
-                                      tabPanel("Columns",fluidRow(tableOutput("columns"))),
-                                      tabPanel("PLAYERS PER CLUB",fluidRow(dataTableOutput("ppc"))),
-                                      tabPanel("PLAYERS PER NATION",fluidRow(dataTableOutput("ppn"))),
-                                      tabPanel("VIEW ENTIRE DATASET",fluidRow(dataTableOutput("dataset")))
-                                      
-                                      
-                                    )
-                                    
-                                    
-                   )
-        )
-      )
-      
-      
-      
-      
-    }
-    
-    
-  )
-  
-  
-  
-  # help tab
-  output$search_plot <- renderUI({
-    searchInput(inputId = "Id009", 
-                label = "Enter the address", 
-                placeholder = "A placeholder", 
-                btnSearch = icon("search"), 
-                btnReset = icon("remove"), 
-                width = "100%")
-  })  
-  
-  
- #logout function
-  observeEvent(input$logout,{
-    USER$Logged<-FALSE
-  })
-  
-  
-})
+}
+
+# Create Shiny app ----
+shinyApp(ui = ui, server = server)
