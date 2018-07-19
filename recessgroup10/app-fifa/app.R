@@ -36,7 +36,61 @@ fifa18 <- mutate(fifa18, Position = x)
 
 #K-means clustering with 3 clusters of sizes 46, 54, 50
 strikers <-fifa18[fifa18$Position == "FWD",c(1,2,7,10,11,22,29,30,35,36,39,43,44,46,49,51,56,59) ] 
-k2 <- kmeans(strikers[,c(-1,-2)], centers = 400, nstart = 25)
+k4 <- kmeans(strikers[,c(-1,-2)], centers = 400, nstart = 25)
+
+midfielders <-fifa18[fifa18$Position == "MID",c(1,2,7,10,34,39,42,43,44,46,51,53,54,55,56,57,59,60,61,62) ] 
+k3 <- kmeans(midfielders[,c(-1,-2)], centers = 400, nstart = 25)
+
+defenders <-fifa18[fifa18$Position == "DEF",c(1,2,7,10,36,42,44,46,50,51,54,55,56,57,59,60,61,62) ] 
+k5 <- kmeans(defenders[,c(-1,-2)], centers = 400, nstart = 25)
+
+keepers <-fifa18[fifa18$Position == "GK",c(1,2,7,10,47,63,64,65,66,67) ] 
+k1 <- kmeans(keepers[,c(-1,-2)], centers = 300, nstart = 25)
+
+
+#its for odds
+pois <- fifa18 %>% 
+  group_by(club) %>%                            # multiple group columns
+  summarise( sum_overall = sum(overall) )  # multiple summary columns
+pois <- as.data.frame(pois)
+pois <- tbl_df(pois)
+pois$club <- sub("^$", "No Club", pois$club)
+
+split1 <- pois[1:324,]
+split2 <- pois[325:648,]
+
+names(split1) <- c("team", "sum_overall")
+names(split2) <- c("opponent", "sum_overall")
+
+pois1 <- cbind(split1,split2)
+pois2 <- cbind(split2,split1)
+
+
+indx <- sapply(pois1, is.numeric)#check which columns are numeric
+nm1 <- which(indx)#get the numeric index of the column
+indx2 <- duplicated(names(nm1))#check which among the
+# integer columns are duplicated
+#use `Map` after splitting the "nm1" with its "names", do the `rowSums`
+pois1[ nm1[!indx2]] <- Map(function(x,y) rowSums(x[y]), list(pois1),
+                           split(nm1, names(nm1)))
+pois1 <- pois1[ -nm1[indx2]]
+
+indx <- sapply(pois2, is.numeric)#check which columns are numeric
+nm1 <- which(indx)#get the numeric index of the column
+indx2 <- duplicated(names(nm1))#check which among the
+# integer columns are duplicated
+#use `Map` after splitting the "nm1" with its "names", do the `rowSums`
+pois2[ nm1[!indx2]] <- Map(function(x,y) rowSums(x[y]), list(pois2),
+                           split(nm1, names(nm1)))
+pois2 <- pois2[ -nm1[indx2]]
+
+
+names(pois2) <- c("team", "sum_overall" , "opponent")
+
+pois1$home <- rep(1,nrow(pois1)) # make new column
+pois2$home <- rep(0,nrow(pois2)) # make new column
+
+pois_final <- rbind(pois1,pois2)
 
 
 # Define UI for app  ----
@@ -77,23 +131,23 @@ ui <- pageWithSidebar(
                                       conditionalPanel(condition = "input.playersOut_H == 1",
                                                        textInput("playerH_1", "Player 1")),
                                       conditionalPanel(condition = "input.playersOut_H == 2",
-                                                       textInput("playerH_1", "player 1"),
-                                                       textInput("playerH_2", "Player 2")),
+                                                       textInput("playerH_2", "player 1"),
+                                                       textInput("playerH_3", "Player 2")),
                                       conditionalPanel(condition = "input.playersOut_H == 3",
-                                                       textInput("playerH_1", "player 1"),
-                                                       textInput("playerH_2", "Player 2"),
-                                                       textInput("playerH_3", "Player 3")),
+                                                       textInput("playerH_4", "player 1"),
+                                                       textInput("playerH_5", "Player 2"),
+                                                       textInput("playerH_6", "Player 3")),
                                       conditionalPanel(condition = "input.playersOut_H == 4",
-                                                       textInput("playerH_1", "player 1"),
-                                                       textInput("playerH_2", "Player 2"),
-                                                       textInput("playerH_3", "player 3"),
-                                                       textInput("playerH_4", "Player 4")),
+                                                       textInput("playerH_7", "player 1"),
+                                                       textInput("playerH_8", "Player 2"),
+                                                       textInput("playerH_9", "player 3"),
+                                                       textInput("playerH_10", "Player 4")),
                                       conditionalPanel(condition = "input.playersOut_H == 5",
-                                                       textInput("playerH_1", "player 1"),
-                                                       textInput("playerH_2", "Player 2"),
-                                                       textInput("playerH_3", "player 3"),
-                                                       textInput("playerH_4", "player 4"),
-                                                       textInput("playerH_5", "Player 5")),
+                                                       textInput("playerH_11", "player 1"),
+                                                       textInput("playerH_12", "Player 2"),
+                                                       textInput("playerH_13", "player 3"),
+                                                       textInput("playerH_14", "player 4"),
+                                                       textInput("playerH_15", "Player 5")),
                                       
                                       textInput("Team_2", "Please Select the Second Team", "Juventus") ,
                                       
@@ -103,23 +157,23 @@ ui <- pageWithSidebar(
                                       conditionalPanel(condition = "input.playersOut_A == 1",
                                                        textInput("playerA_1", "Player 1")),
                                       conditionalPanel(condition = "input.playersOut_A == 2",
-                                                       textInput("playerA_1", "player 1"),
-                                                       textInput("playerA_2", "Player 2")),
+                                                       textInput("playerA_2", "player 1"),
+                                                       textInput("playerA_3", "Player 2")),
                                       conditionalPanel(condition = "input.playersOut_A == 3",
-                                                       textInput("playerA_1", "player 1"),
-                                                       textInput("playerA_2", "Player 2"),
-                                                       textInput("playerA_3", "Player 3")),
+                                                       textInput("playerA_4", "player 1"),
+                                                       textInput("playerA_5", "Player 2"),
+                                                       textInput("playerA_6", "Player 3")),
                                       conditionalPanel(condition = "input.playersOut_A == 4",
-                                                       textInput("playerA_1", "player 1"),
-                                                       textInput("playerA_2", "Player 2"),
-                                                       textInput("playerA_3", "player 3"),
-                                                       textInput("playerA_4", "Player 4")),
+                                                       textInput("playerA_7", "player 1"),
+                                                       textInput("playerA_8", "Player 2"),
+                                                       textInput("playerA_9", "player 3"),
+                                                       textInput("playerA_10", "Player 4")),
                                       conditionalPanel(condition = "input.playersOut_A == 5",
-                                                       textInput("playerA_1", "player 1"),
-                                                       textInput("playerA_2", "Player 2"),
-                                                       textInput("playerA_3", "player 3"),
-                                                       textInput("playerA_4", "player 4"),
-                                                       textInput("playerA_5", "Player 5"))
+                                                       textInput("playerA_11", "player 1"),
+                                                       textInput("playerA_12", "Player 2"),
+                                                       textInput("playerA_13", "player 3"),
+                                                       textInput("playerA_14", "player 4"),
+                                                       textInput("playerA_15", "Player 5"))
                      )
                      ),
     
@@ -191,6 +245,8 @@ ui <- pageWithSidebar(
 
 # Define server logic required to draw a histogram ----
 server <- function(input, output, session){
+  
+  
   
   output$tplayers <- renderDataTable({
     
@@ -419,10 +475,32 @@ server <- function(input, output, session){
   
   output$signings <- renderDataTable({
     
+    field <- fifa18 %>% 
+      filter(name == input$player)%>%
+      select( name,Position)
+    field_part <-as.character(field$Position) 
     
-    ## list of cluster assignments
-    o=order(k2$cluster)
-    s_clusters <- data.frame(strikers$name[o],k2$cluster[o])
+    if(field_part == "FWD"){
+      ## list of cluster assignments
+      o=order(k4$cluster)
+      s_clusters <- data.frame(strikers$name[o],k4$cluster[o])
+    }
+    if(field_part == "MID"){
+      ## list of cluster assignments
+      o=order(k3$cluster)
+      s_clusters <- data.frame(midfielders$name[o],k3$cluster[o])
+    }
+    if(field_part == "DEF"){
+      ## list of cluster assignments
+      o=order(k5$cluster)
+      s_clusters <- data.frame(defenders$name[o],k5$cluster[o])
+    }
+    if(field_part == "GK"){
+      ## list of cluster assignments
+      o=order(k1$cluster)
+      s_clusters <- data.frame(keepers$name[o],k1$cluster[o])
+    }
+    
     names(s_clusters) <- c("name", "clusters")
     cluster_group <-as.numeric(s_clusters[s_clusters$name == input$player,2])  #s_clusters[s_clusters$name == "L. Messi",2] 
     final_cluster <- s_clusters[s_clusters$clusters == cluster_group,]
@@ -432,49 +510,32 @@ server <- function(input, output, session){
   output$odds <- renderDataTable({
     
     
+    po_H <- fifa18 %>% 
+      filter(club == input$Team_1)%>%
+      select( name,overall)%>%
+      filter(name %in% c(input$playerH_1,input$playerH_2,input$playerH_3,input$playerH_4,input$playerH_5,
+                         input$playerH_6,input$playerH_7,input$playerH_8,input$playerH_9,input$playerH_10,
+                         input$playerH_11,input$playerH_12,input$playerH_13,input$playerH_14,input$playerH_15
+                         
+                         ))
+    missing_H <- sum(as.numeric(po_H$overall))
     
-    pois <- fifa18 %>% 
-      group_by(club) %>%                            # multiple group columns
-      summarise( sum_overall = sum(overall) )  # multiple summary columns
-    pois <- as.data.frame(pois)
-    pois <- tbl_df(pois)
-    pois$club <- sub("^$", "No Club", pois$club)
+    pois_final$sum_overall[pois_final$team == input$Team_1] <-  as.numeric(pois_final$sum_overall[pois_final$team == input$Team_1]) - missing_H
+    pois_final$sum_overall[pois_final$opponent == input$Team_1] <-  as.numeric(pois_final$sum_overall[pois_final$opponent == input$Team_1]) - missing_H
     
-    split1 <- pois[1:324,]
-    split2 <- pois[325:648,]
+    po_A <- fifa18 %>% 
+      filter(club == input$Team_2)%>%
+      select( name,overall)%>%
+      filter(name %in% c(input$playerA_1,input$playerA_2,input$playerA_3,input$playerA_4,input$playerA_5,
+                         input$playerA_6,input$playerA_7,input$playerA_8,input$playerA_9,input$playerA_10,
+                         input$playerA_11,input$playerA_12,input$playerA_13,input$playerA_14,input$playerA_15
+                         
+                         ))
+    missing_A <- sum(as.numeric(po_A$overall))
     
-    names(split1) <- c("team", "sum_overall")
-    names(split2) <- c("opponent", "sum_overall")
+    pois_final$sum_overall[pois_final$team == input$Team_2] <-  as.numeric(pois_final$sum_overall[pois_final$team == input$Team_2]) - missing_A
+    pois_final$sum_overall[pois_final$opponent == input$Team_2] <-  as.numeric(pois_final$sum_overall[pois_final$opponent == input$Team_2]) - missing_A
     
-    pois1 <- cbind(split1,split2)
-    pois2 <- cbind(split2,split1)
-    
-    
-    indx <- sapply(pois1, is.numeric)#check which columns are numeric
-    nm1 <- which(indx)#get the numeric index of the column
-    indx2 <- duplicated(names(nm1))#check which among the
-    # integer columns are duplicated
-    #use `Map` after splitting the "nm1" with its "names", do the `rowSums`
-    pois1[ nm1[!indx2]] <- Map(function(x,y) rowSums(x[y]), list(pois1),
-                               split(nm1, names(nm1)))
-    pois1 <- pois1[ -nm1[indx2]]
-    
-    indx <- sapply(pois2, is.numeric)#check which columns are numeric
-    nm1 <- which(indx)#get the numeric index of the column
-    indx2 <- duplicated(names(nm1))#check which among the
-    # integer columns are duplicated
-    #use `Map` after splitting the "nm1" with its "names", do the `rowSums`
-    pois2[ nm1[!indx2]] <- Map(function(x,y) rowSums(x[y]), list(pois2),
-                               split(nm1, names(nm1)))
-    pois2 <- pois2[ -nm1[indx2]]
-    
-    
-    names(pois2) <- c("team", "sum_overall" , "opponent")
-    
-    pois1$home <- rep(1,nrow(pois1)) # make new column
-    pois2$home <- rep(0,nrow(pois2)) # make new column
-    
-    pois_final <- rbind(pois1,pois2)
     
     #pois_final$sum_overall <- sub( 18649, 4000, pois_final$sum_overall)
     pois_final$sum_overall <-  as.numeric(pois_final$sum_overall) / 2900
